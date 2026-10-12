@@ -41,7 +41,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
 
     @app.get("/health")
     def health() -> dict:
-        return {"status": "ok", "users": service.stats()}
+        return {"status": "ok", **service.stats()}
 
     @app.post("/aml/add", response_model=AddResponse)
     def aml_add(
