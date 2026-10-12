@@ -95,6 +95,13 @@ def test_auth_required_when_key_configured() -> None:
     assert client.post("/aml/search", json={"query": "hello", "user_id": "u1", "top_k": 5}, headers={"Authorization": "Bearer wrong"}).status_code == 401
 
 
+def test_auth_accepts_token_scheme() -> None:
+    client = make_client(key="secret-key")
+    headers = {"Authorization": "Token secret-key"}
+    assert client.post("/aml/add", json=add_payload("c1", "u1", "hello"), headers=headers).status_code == 200
+    assert client.post("/aml/search", json={"query": "hello", "user_id": "u1", "top_k": 5}, headers=headers).status_code == 200
+
+
 def test_health_is_open() -> None:
     client = make_client(key="secret-key")
     r = client.get("/health")
