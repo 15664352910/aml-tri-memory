@@ -4,16 +4,21 @@
 
 ## 1. 身份与版本
 
-- [ ] 系统名称：AML Tri-Memory；版本号（评测冻结版，如 `1.0-eval`）
+- [ ] 系统名称：AML Tri-Memory；版本号 `1.0-eval`（线上部署 commit：`42a92ae`）
 - [ ] 联系人姓名 / 邮箱 / 单位或团队名
 - [ ] 赛道与组别声明：Textual Memory / Open-source Methods
 
 ## 2. API 与部署
 
-- [ ] 线上 Add endpoint：`https://<host>/aml/add`
-- [ ] 线上 Search endpoint：`https://<host>/aml/search`
+- [ ] 线上 Add endpoint：`https://api.aml-tri-memory.icu/aml/add`
+- [ ] 线上 Search endpoint：`https://api.aml-tri-memory.icu/aml/search`
 - [ ] 认证方式：`Authorization: Bearer <Memory System Key>`（key 经安全渠道单独提交，不入库、不进截图/邮件）
-- [ ] 容量声明：并发上限、Add/Search 超时预算、rate limit（待压测后填实测值）
+- [ ] 容量声明（2026-10-28 实测，2C/1G，LongMemEval-S 真实流量 ×3 轮，零错误）：
+      并发上限 **8**（吞吐在并发 4→16 间饱和于 ~37 Add req/s，更高并发仅增加延迟）；
+      Add 超时预算 **10 s**（p50 91 ms，p99 388 ms @并发 4；最坏 3.7 s @并发 16 满载）；
+      Search 超时预算 **15 s**（p50 0.7 s，p99 3.3 s @并发 16 满载，单用户 550 事件 / ~500 KB 历史全量扫描）；
+      rate limit **40 req/s** 持续（峰值容量 ~45 req/s，留 ~10% 余量）；
+      资源水位：应用内存峰值 95 MB，Postgres 42 MB，swap 未触顶，磁盘占用 ~18 MB / 30 GB
 - [ ] 版本一致性：线上部署 commit hash 与提交材料所列一致
 - [ ] `/health` 监控与进程守护方案说明
 
