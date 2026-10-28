@@ -64,18 +64,28 @@ class MemoryStorage:
 
 class PostgresStorage:
     """PostgreSQL backend (psycopg 3). Records live in one table keyed by
-    (user_id, kind, id); idempotent Add responses are keyed by request_id."""
+    (user_id, kind, id); idempotent Add responses are keyed by request_id.
+
+    Connections come from a pool: every storage call borrows an already-open
+    connection instead of paying TCP + auth + DNS per call. Before pooling,
+    one Add request opened ~22 short-lived connections and connection
+    establishment dominated latency.
+    """
 
     def __init__(self, database_url: str) -> None:
         import psycopg  # imported lazily: optional dependency
+        from psycopg_pool import ConnectionPool
 
         self._psycopg = psycopg
         self._dsn = database_url
         self._lock = threading.RLock()
+        # max_size 8: well under PG max_connections, enough for the uvicorn
+        # thread pool to overlap Add/Search without queueing.
+        self._pool = ConnectionPool(database_url, min_size=1, max_size=8, timeout=30)
         self._ensure_schema()
 
     def _connect(self):
-        return self._psycopg.connect(self._dsn)
+        return self._pool.connection()
 
     def _ensure_schema(self) -> None:
         with self._connect() as conn:
